@@ -1,7 +1,9 @@
-import { StatusBar } from 'expo-status-bar';
-import { Text, SafeAreaView } from 'react-native';
+import { StatusBar } from 'react-native';
 
 import { useFonts, Roboto_300Light, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto'
+import Header from './src/components/Header';
+import Container from './src/components/Container';
+import ViaCepForm from './src/components/ViaCepForm';
 
 export default function App() {
   let [fonstLoaded, fontError] = useFonts({
@@ -14,9 +16,10 @@ export default function App() {
     return;
 
   return (
-    <SafeAreaView>
-      <Text>ViaCep Mobile</Text>
+    <Container>
       <StatusBar />
-    </SafeAreaView>
+      <Header />
+      <ViaCepForm />
+    </Container>
   );
 }
