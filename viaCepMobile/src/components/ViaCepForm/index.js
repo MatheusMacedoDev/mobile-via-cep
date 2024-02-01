@@ -1,8 +1,11 @@
+import axios from 'axios';
+
+import { useState } from 'react';
 import { FormContainer, InputsWrapper } from './style';
 
 import InputField from '../InputField';
 import SplitedLayout from '../SplitedLayout';
-import { useState } from 'react';
+
 
 export default function ViaCepForm() {
     const [cep, setCep] = useState('');
@@ -12,15 +15,55 @@ export default function ViaCepForm() {
     const [state, setState] = useState('');
     const [federalUnit, setFederalUnit] = useState('');
 
+    async function cepCalculator(cep) {
+        if (cep.length < 9) 
+            return;
+    
+        try {
+            const viaCepUrl = `https://viacep.com.br/ws/${cep}/json/`;
+            const viaCepResponse = (await axios.get(viaCepUrl)).data;
+
+            const ibgeUrl = `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${viaCepResponse.uf}`;
+            const ibgeResponse = (await axios.get(ibgeUrl)).data;
+
+            const mapped = {
+                street: viaCepResponse.logradouro,
+                neighborhood: viaCepResponse.bairro,
+                city: viaCepResponse.localidade,
+                state: ibgeResponse.nome,
+                federalUnit: viaCepResponse.uf,
+            };
+
+            setStreet(mapped.street);
+            setNeighborhood(mapped.neighborhood);
+            setCity(mapped.city);
+            setState(mapped.state)
+            setFederalUnit(mapped.federalUnit);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    function maskCep(onlyNumbersCep) {
+        return onlyNumbersCep.replace(/(\d{5})(\d)/, '$1-$2');
+    }
+
     return (
-        <FormContainer>
+        <FormContainer contentContainerStyle={{ paddingBottom: 50 }}>
             <InputsWrapper>
                 <InputField 
                     labelText='Informar CEP:'
                     inputPlaceholder='Cep...'
                     defaultInputValue={cep}
-                    valueHandleFn={setCep}
-                    onBlur={console.log('blurrrrr')}
+                    valueHandleFn={cep => {
+                        const maskedCep = maskCep(cep);
+                        setCep(maskedCep);
+
+                        cepCalculator(cep);
+                    }}
+                    valueMaxLength={9}
+                    isNumeric={true}
+                    isEditable={true}
                 />
                 <InputField 
                     labelText='Logradouro:'
