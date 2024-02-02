@@ -1,11 +1,10 @@
-import axios from 'axios';
-
 import { useState } from 'react';
 import { FormContainer, InputsWrapper } from './style';
 
 import InputField from '../InputField';
 import SplitedLayout from '../SplitedLayout';
 
+import { cepCalculator, maskCep } from '../../Services/CepService';
 
 export default function ViaCepForm() {
     const [cep, setCep] = useState('');
@@ -15,39 +14,6 @@ export default function ViaCepForm() {
     const [state, setState] = useState('');
     const [federalUnit, setFederalUnit] = useState('');
 
-    async function cepCalculator(cep) {
-        if (cep.length < 9) 
-            return;
-    
-        try {
-            const viaCepUrl = `https://viacep.com.br/ws/${cep}/json/`;
-            const viaCepResponse = (await axios.get(viaCepUrl)).data;
-
-            const ibgeUrl = `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${viaCepResponse.uf}`;
-            const ibgeResponse = (await axios.get(ibgeUrl)).data;
-
-            const mapped = {
-                street: viaCepResponse.logradouro,
-                neighborhood: viaCepResponse.bairro,
-                city: viaCepResponse.localidade,
-                state: ibgeResponse.nome,
-                federalUnit: viaCepResponse.uf,
-            };
-
-            setStreet(mapped.street);
-            setNeighborhood(mapped.neighborhood);
-            setCity(mapped.city);
-            setState(mapped.state)
-            setFederalUnit(mapped.federalUnit);
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
-    function maskCep(onlyNumbersCep) {
-        return onlyNumbersCep.replace(/(\d{5})(\d)/, '$1-$2');
-    }
-
     return (
         <FormContainer contentContainerStyle={{ paddingBottom: 50 }}>
             <InputsWrapper>
@@ -55,11 +21,19 @@ export default function ViaCepForm() {
                     labelText='Informar CEP:'
                     inputPlaceholder='Cep...'
                     defaultInputValue={cep}
-                    valueHandleFn={cep => {
+                    valueHandleFn={async cep => {
                         const maskedCep = maskCep(cep);
                         setCep(maskedCep);
 
-                        cepCalculator(cep);
+                        const data = await cepCalculator(cep);
+
+                        if (data != null && data != undefined) {
+                            setStreet(data.street);
+                            setNeighborhood(data.neighborhood);
+                            setCity(data.city);
+                            setState(data.state)
+                            setFederalUnit(data.federalUnit);
+                        }
                     }}
                     valueMaxLength={9}
                     isNumeric={true}
